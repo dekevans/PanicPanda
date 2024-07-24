@@ -40,4 +40,4 @@ b. Piping it through the cli (config.txt in this example contains the informatio
 # TO-DO
 
 - Rate-Limiting system
-- Fix parsing errors for #/ref parameters
+- Fix parsing errors for #/ref parameters (v3)
