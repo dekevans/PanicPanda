@@ -1,0 +1,3 @@
+alert({})
+SELECT {} FROM {}
+DELETE {} FROM {}

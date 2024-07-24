@@ -1,0 +1,6 @@
+<controllerAddress>
+<authentication token>
+<time you want test to take>
+<swaggerdoc configuration filepath>
+<Wordlist filepath (just put a newline here if no wordlist)>
+<y or Y for full console logging, n or N for none at all>
