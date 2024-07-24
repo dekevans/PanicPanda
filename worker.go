@@ -150,9 +150,9 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 					fuzz.NewFromGoFuzz(winner).Fuzz(&ftime)
 					req.Header.Add("Last-Modified", ftime.Format(time.RFC1123))
 					listparam["Last-Modified"] = ftime.Format(time.RFC1123)
-					fuzz.NewFromGoFuzz(winner).Fuzz(&fint)
-					req.Header.Add("Content-Length", strconv.Itoa(fint))
-					listparam["Content-Length"] = strconv.Itoa(fint)
+					//fuzz.NewFromGoFuzz(winner).Fuzz(&fint)
+					//req.Header.Add("Content-Length", strconv.Itoa(fint))
+					//listparam["Content-Length"] = strconv.Itoa(fint)
 				}
 				/*for _, c := range api.consumes {
 					req.Header.Add("Content-Type", c)
@@ -283,9 +283,9 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 					f.Fuzz(&ftime)
 					req.Header.Add("Last-Modified", ftime.Format(time.RFC1123))
 					listparam["Last-Modified"] = ftime.Format(time.RFC1123)
-					f.Fuzz(&fint)
-					req.Header.Add("Content-Length", strconv.Itoa(fint))
-					listparam["Content-Length"] = strconv.Itoa(fint)
+					//f.Fuzz(&fint)
+					//req.Header.Add("Content-Length", strconv.Itoa(fint))
+					//listparam["Content-Length"] = strconv.Itoa(fint)
 					if err != nil {
 						return err
 					}
