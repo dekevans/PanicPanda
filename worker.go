@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -16,13 +18,14 @@ import (
 	fuzz "github.com/google/gofuzz"
 )
 
-func fullfunc(controllerAddress string, api apiDoc, token string, timer int, requiresAuth bool, headers bool, id int, timeout context.Context, printMutex *sync.Mutex, wordlist []string) error {
+func fullfunc(controllerAddress string, api apiDoc, token string, timer int, requiresAuth bool, headers bool, id int, timeout context.Context, printMutex *sync.Mutex, wordlist []string, backoff int) error {
 	f := fuzz.New()
 	var fint int
 	var fbool bool
 	var fstring string
 	var ftime time.Time
 	list := [][]byte{}
+	failureCount := 0
 	for _, word := range wordlist {
 		list = append(list, []byte(word))
 	}
@@ -53,6 +56,25 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 				requestURL := fmt.Sprintf("%s%s", controllerAddress, apiPath)
 				data := url.Values{}
 				var tstring string
+				datatype := "none"
+				for _, consume := range api.consumes {
+					if consume == "application/json" {
+						datatype = "json"
+						break
+					}
+					if consume == "application/x-www-form-urlencoded" {
+						datatype = "form"
+						break
+					}
+					if consume == "application/vnd.api+json" {
+						datatype = "jsonvnd"
+						break
+					}
+				}
+				if datatype == "none" {
+					fmt.Printf("No valid content type found for %s\n", requestURL)
+					return nil
+				}
 				for _, p := range api.parameters {
 					types := p.inputType
 					switch types {
@@ -73,10 +95,47 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 						listparam[p.name] = strconv.FormatBool(fbool)
 					}
 				}
-				req, err := http.NewRequest(api.call, requestURL, strings.NewReader(data.Encode()))
-				if err != nil {
-					fmt.Println("Error creating request:", err)
-					return err
+				req := &http.Request{}
+				if datatype == "json" {
+					dataMap := make(map[string]interface{})
+					for key, value := range data {
+						if len(value) > 1 {
+							dataMap[key] = value[0]
+						}
+					}
+					jsondata, err := json.Marshal(data)
+					if err != nil {
+						fmt.Printf("Error marshalling data: %s\n", err)
+						return err
+					}
+					req, err = http.NewRequest(api.call, requestURL, bytes.NewBuffer(jsondata))
+					if err != nil {
+						fmt.Printf("Error creating request: %s\n", err)
+						return err
+					}
+					req.Header.Set("Content-Type", "application/json")
+				} else if datatype == "jsonvnd" {
+					dataMap := make(map[string]interface{})
+					for key, value := range data {
+						if len(value) > 1 {
+							dataMap[key] = value[0]
+						}
+					}
+					jsondata, err := json.Marshal(data)
+					if err != nil {
+						fmt.Printf("Error marshalling data: %s\n", err)
+						return err
+					}
+					//print jsondata
+					req, err = http.NewRequest(api.call, requestURL, bytes.NewBuffer(jsondata))
+					if err != nil {
+						fmt.Printf("Error creating request: %s\n", err)
+						return err
+					}
+					req.Header.Set("Content-Type", "application/vnd.api+json")
+				} else if datatype == "form" {
+					req, _ = http.NewRequest(api.call, requestURL, strings.NewReader(data.Encode()))
+					req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 				}
 				if headers {
 					fuzz.NewFromGoFuzz(winner).Fuzz(&fint)
@@ -95,10 +154,12 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 					req.Header.Add("Content-Length", strconv.Itoa(fint))
 					listparam["Content-Length"] = strconv.Itoa(fint)
 				}
-				for _, c := range api.consumes {
+				/*for _, c := range api.consumes {
 					req.Header.Add("Content-Type", c)
-				}
+				}*/
 				if requiresAuth {
+					//fmt.Printf("Token: %s\n", token)
+					//req.Header.Add("Authorization", "Bearer "+token)
 					req.Header.Add("Authorization", "Bearer "+token)
 				} else {
 					f.Fuzz(&fstring)
@@ -156,7 +217,14 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 							fmt.Printf("%s -> %s\n", key, value)
 							list = append(list, []byte(value))
 						}
+						//added failure backoff
 						fmt.Printf("\n")
+						failureCount++
+						if failureCount > 10 {
+							fmt.Printf("Too many failures. Waiting %d seconds before continuing\n", backoff)
+							time.Sleep(time.Duration(backoff) * time.Second)
+							failureCount = 0
+						}
 					}
 					if headers {
 						fmt.Printf("\nResponse Status: %s %s\n Responded in: %d milliseconds\n", requestURL, resp.Status, timeElapsed)

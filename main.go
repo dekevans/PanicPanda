@@ -82,7 +82,6 @@ func main() {
 		}
 		defer wordListFile.Close()
 	}
-
 	swagstr = strings.TrimSpace(swagstr)
 	swag := parseSwag(swagstr)
 	if swag == nil {
@@ -98,12 +97,30 @@ func main() {
 	} else if log == "y" || log == "Y" {
 		headers = true
 	}
+
+	backoff := 0
+	fmt.Println("How many seconds do you want to wait before retrying the fuzzer after continuous failure?")
+	backoffstr, err := reader.ReadString('\n')
+	if err != nil {
+		fmt.Println("Error reading backoff time:", err)
+		return
+	}
+	backoffstr = strings.TrimSpace(backoffstr)
+	if backoffstr == "" {
+		fmt.Println("No backoff time provided. Will use default backoff time of 10 seconds.")
+		backoffstr = "10"
+	}
+	backoff, err = strconv.Atoi(backoffstr)
+	if err != nil {
+		fmt.Println("Error converting backoff time:", err)
+		return
+	}
 	defang := false
 	if !defang {
-		threadManager(controllerAddress, swag, token, timer, authflag, headers, wordlist)
+		threadManager(controllerAddress, swag, token, timer, authflag, headers, wordlist, backoff)
 	}
 }
-func threadManager(controllerAddress string, apiList []apiDoc, args string, timer int, requiresAuth bool, headers bool, wordlist []string) {
+func threadManager(controllerAddress string, apiList []apiDoc, args string, timer int, requiresAuth bool, headers bool, wordlist []string, backoff int) {
 	var wrkgrp sync.WaitGroup
 	timeout, cancel := context.WithTimeout(context.Background(), time.Duration(timer)*time.Second)
 	fmt.Printf("Starting the fuzzer for %d seconds\n", timer)
@@ -113,7 +130,7 @@ func threadManager(controllerAddress string, apiList []apiDoc, args string, time
 		wrkgrp.Add(1)
 		go func(id int) {
 			defer wrkgrp.Done()
-			fullfunc(controllerAddress, api, args, timer, requiresAuth, headers, id, timeout, &printMutex, wordlist)
+			fullfunc(controllerAddress, api, args, timer, requiresAuth, headers, id, timeout, &printMutex, wordlist, backoff)
 		}(id)
 		id++
 		//break
