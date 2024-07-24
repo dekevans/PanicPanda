@@ -9,8 +9,9 @@ a. Manually, through the cli
 Input auth token (if none, leave blank):
 Input timer:
 Input swagger file path:
-Input wordlist file path: (if you want pure random data, leave blank):
-Do you want full logging to console? (y/n)
+Input wordlist file path: (if you want pure random data, leave blank)
+Do you want to fuzz the headers? (Y/N)
+How many seconds do you want to wait before retrying the fuzzer after continuous failure?
 </code></pre>
 b. Piping it through the cli (config.txt in this example contains the information normally entered through the cli in a text file, separated by new lines) 
 <pre><code>go . run < config.txt</code></pre>
