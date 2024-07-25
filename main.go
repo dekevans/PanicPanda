@@ -10,6 +10,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -19,7 +20,13 @@ import (
 
 func main() {
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Println("Welcome to the API Fuzzer")
+	content, err := ioutil.ReadFile("panicpanda.txt")
+	if err != nil {
+		fmt.Println("Error reading swagger file:", err)
+		return
+	}
+	fmt.Println(string(content))
+	fmt.Println("Welcome to the PanicPanda!")
 	fmt.Println("Input domain and paths (everything before the paths on the swaggerdoc):")
 	controllerAddress, err := reader.ReadString('\n')
 	if err != nil {
