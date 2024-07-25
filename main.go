@@ -123,6 +123,7 @@ func main() {
 func threadManager(controllerAddress string, apiList []apiDoc, args string, timer int, requiresAuth bool, headers bool, wordlist []string, backoff int) {
 	var wrkgrp sync.WaitGroup
 	timeout, cancel := context.WithTimeout(context.Background(), time.Duration(timer)*time.Second)
+	defer cancel()
 	fmt.Printf("Starting the fuzzer for %d seconds\n", timer)
 	id := 0
 	var printMutex sync.Mutex
@@ -130,11 +131,13 @@ func threadManager(controllerAddress string, apiList []apiDoc, args string, time
 		wrkgrp.Add(1)
 		go func(id int) {
 			defer wrkgrp.Done()
+			//fmt.Println("Fuzzing API:", api.path)
+			//if api.path == "/applications" {
 			fullfunc(controllerAddress, api, args, timer, requiresAuth, headers, id, timeout, &printMutex, wordlist, backoff)
+			//return
+			//}
 		}(id)
 		id++
-		//break
 	}
-	defer cancel()
 	wrkgrp.Wait()
 }

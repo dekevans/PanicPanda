@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/go-openapi/loads"
 	"github.com/go-openapi/spec"
@@ -116,12 +117,14 @@ func parseSwag(file string) []apiDoc {
 				apiDocPH.tags = operation.Tags
 				//fmt.Printf("  Tags: %s\n", operation.Tags)
 				for _, params := range operation.Parameters {
-					if params.Ref.String() != "" {
-						//fmt.Printf("	Ref: %s\n", params.Ref.String())
-					} else {
-						apiDocPH.parameters = append(apiDocPH.parameters, param{params.Type, params.Description, params.Name, params.In})
-						//printParams(param{params.Type, params.Description, params.Name, params.In})
+					//if params.Ref.String() != "" {
+					//fmt.Printf("	Ref: %s\n", params.Ref.String())
+					//} else {
+					if strings.Contains(params.Description, "RFC") {
+						params.Type = "date"
 					}
+					apiDocPH.parameters = append(apiDocPH.parameters, param{params.Type, params.Description, params.Name, params.In})
+					//printParams(param{params.Type, params.Description, params.Name, params.In})
 				}
 				responseDocPH := responseDoc{}
 				for code, response := range operation.Responses.StatusCodeResponses {
