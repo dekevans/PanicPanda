@@ -135,7 +135,7 @@ func main() {
 		fmt.Println("Error converting backoff time:", err)
 		return
 	}
-	defang := true
+	defang := false
 	if !defang {
 		threadManager(controllerAddress, swag, token, timer, authflag, headers, wordlist, pathlist, backoff)
 	} else {

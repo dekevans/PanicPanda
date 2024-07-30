@@ -26,6 +26,9 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 	var fstring string
 	var ftime time.Time
 	list := [][]byte{}
+	for _, word := range wordlist {
+		list = append(list, []byte(word))
+	}
 	failureCount := 0
 	listparam := make(map[string]string)
 	// myInt gets a random value.
@@ -42,15 +45,17 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 				return nil
 			default:
 				//POET w/ WORDLIST STARTS HERE
-				winner := []byte(list[i])
+				winner := list[i]
 				apiPath := api.path
 				//f.Fuzz(&fstring)
 				var fuzztarget string
 				//printMutex.Lock()
-				pathWinner := pathlist[i]
-				//fmt.Printf("Fuzzing with: %s and with corpus of %s, %d\n", fuzztarget, winner, i)
-				//printMutex.Unlock()
-				fstring = url.PathEscape(pathWinner)
+				f.Fuzz(&fstring)
+				if len(pathlist) != 0 {
+					fstring = url.PathEscape(pathlist[i])
+				} else {
+					fstring = url.PathEscape(fstring)
+				}
 				apiPath = replacePlaceholder(apiPath, fstring)
 				requestURL := fmt.Sprintf("%s%s", controllerAddress, apiPath)
 				data := url.Values{}
