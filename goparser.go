@@ -12,7 +12,7 @@ import (
 type responseDoc struct {
 	responseCode int    `json:"response"`
 	description  string `json:"description"`
-	schema       string `json:"schema"` // TODO: ADD MORE SCHEMA TYPES
+	schema       string `json:"schema"`
 	ref          string `json:"ref"`
 }
 
@@ -25,10 +25,6 @@ type param struct {
 	description string `json:"description"`
 	name        string `json:"name"`
 	in          string `json:"in"`
-}
-
-type components struct {
-	parameters []param `json:"parameters"`
 }
 
 type apiDoc struct {

@@ -10,6 +10,13 @@ require (
 )
 
 require (
+	github.com/getkin/kin-openapi v0.126.0 // indirect
+	github.com/invopop/yaml v0.3.1 // indirect
+	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
+	github.com/perimeterx/marshmallow v1.1.5 // indirect
+)
+
+require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/beevik/etree v1.1.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
@@ -37,7 +44,7 @@ require (
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/quanxiang-cloud/cabin v0.0.6 // indirect
 	github.com/quanxiang-cloud/polyapi v0.0.0-20220530090733-55524bdb7acd // indirect
-	github.com/ugorji/go/codec v1.1.7 // indirect
+	github.com/ugorji/go/codec v1.2.7 // indirect
 	github.com/yvasiyarov/swagger v0.0.0-20180817222219-39eb437316e9
 	go.mongodb.org/mongo-driver v1.16.0 // indirect
 	go.uber.org/atomic v1.7.0 // indirect

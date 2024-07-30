@@ -69,6 +69,7 @@ func main() {
 		return
 	}
 	var wordlist []string
+	var pathlist []string
 	fmt.Println("Input wordlist file path: (if you want pure random data, leave blank)")
 	wordlistPath, err := reader.ReadString('\n')
 	wordlistPath = strings.TrimSpace(wordlistPath)
@@ -83,10 +84,22 @@ func main() {
 			return
 		}
 		scanner := bufio.NewScanner(wordListFile)
+		pathflag := false
 		for scanner.Scan() {
 			word := strings.TrimSpace(scanner.Text())
-			wordlist = append(wordlist, word)
+			if word == "PATHLIST" {
+				pathflag = true
+				continue
+			}
+			if word != "" {
+				if pathflag {
+					pathlist = append(pathlist, word)
+				} else {
+					wordlist = append(wordlist, word)
+				}
+			}
 		}
+
 		defer wordListFile.Close()
 	}
 	swagstr = strings.TrimSpace(swagstr)
@@ -122,12 +135,16 @@ func main() {
 		fmt.Println("Error converting backoff time:", err)
 		return
 	}
-	defang := false
+	defang := true
 	if !defang {
-		threadManager(controllerAddress, swag, token, timer, authflag, headers, wordlist, backoff)
+		threadManager(controllerAddress, swag, token, timer, authflag, headers, wordlist, pathlist, backoff)
+	} else {
+		for _, api := range swag {
+			printAPI(api)
+		}
 	}
 }
-func threadManager(controllerAddress string, apiList []apiDoc, args string, timer int, requiresAuth bool, headers bool, wordlist []string, backoff int) {
+func threadManager(controllerAddress string, apiList []apiDoc, args string, timer int, requiresAuth bool, headers bool, wordlist []string, pathlist []string, backoff int) {
 	var wrkgrp sync.WaitGroup
 	timeout, cancel := context.WithTimeout(context.Background(), time.Duration(timer)*time.Second)
 	defer cancel()
@@ -140,7 +157,7 @@ func threadManager(controllerAddress string, apiList []apiDoc, args string, time
 			defer wrkgrp.Done()
 			//fmt.Println("Fuzzing API:", api.path)
 			//if api.path == "/applications" {
-			fullfunc(controllerAddress, api, args, timer, requiresAuth, headers, id, timeout, &printMutex, wordlist, backoff)
+			fullfunc(controllerAddress, api, args, timer, requiresAuth, headers, id, timeout, &printMutex, wordlist, pathlist, backoff)
 			//return
 			//}
 		}(id)
