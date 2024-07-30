@@ -17,7 +17,7 @@ b. Piping it through the cli (config.txt in this example contains the informatio
 <pre><code>go . run < config.txt</code></pre>
 
 ### There is an example config.txt included, fill it out, don't forget to add a new line at the end
-### There is also an example wordlist.txt included, to fuzz portions of the words with {}
+### There is also an example wordlist.txt included, to fuzz portions of the words with {}, add valid path names after PATHLIST, as shown in wordlist.txt example
 # RATIONALE
 
 - Currently, the code takes in swagger documentation and parses the api paths such that every endpoint gets fuzzed
