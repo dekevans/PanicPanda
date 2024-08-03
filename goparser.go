@@ -10,32 +10,28 @@ import (
 )
 
 type responseDoc struct {
-	responseCode int    `json:"response"`
-	description  string `json:"description"`
-	schema       string `json:"schema"`
-	ref          string `json:"ref"`
+	responseCode int
+	description  string
+	schema       string
+	ref          string
 }
 
-type ref struct {
-	ref string `json:"ref"`
-} //TODO: ADD FUNCTIONALITY
-
 type param struct {
-	inputType   string `json:"type"`
-	description string `json:"description"`
-	name        string `json:"name"`
-	in          string `json:"in"`
+	inputType   string
+	description string
+	name        string
+	in          string
 }
 
 type apiDoc struct {
-	path       string        `json:"path"`
-	call       string        `json:"call"`
-	consumes   []string      `json:"consumes"`
-	produces   []string      `json:"produces"`
-	tags       []string      `json:"tags"`
-	summary    string        `json:"summary"`
-	parameters []param       `json:"parameters"`
-	responses  []responseDoc `json:"responses"`
+	path       string
+	call       string
+	consumes   []string
+	produces   []string
+	tags       []string
+	summary    string
+	parameters []param
+	responses  []responseDoc
 }
 
 func printResponse(r responseDoc) {
@@ -66,7 +62,7 @@ func printAPI(api apiDoc) {
 	}
 }
 
-func parseSwag(file string) []apiDoc {
+func swag2(file string) []apiDoc {
 	doc, err := loads.Spec(file)
 	if err != nil {
 		panic(err)
@@ -101,40 +97,24 @@ func parseSwag(file string) []apiDoc {
 			}
 			if operation != nil {
 				apiDocPH.path = path
-				//fmt.Printf("Path: %s\n", path)
 				apiDocPH.call = method
-				//fmt.Printf("  Call: %s\n", method)
 				apiDocPH.summary = operation.Summary
-				//fmt.Printf("  Summary: %s\n", operation.Summary)
 				apiDocPH.consumes = operation.Consumes
-				//fmt.Printf("  Consumes: %s\n", operation.Consumes)
 				apiDocPH.produces = operation.Produces
-				//fmt.Printf("  Produces: %s\n", operation.Produces)
 				apiDocPH.tags = operation.Tags
-				//fmt.Printf("  Tags: %s\n", operation.Tags)
 				for _, params := range operation.Parameters {
-					//if params.Ref.String() != "" {
-					//fmt.Printf("	Ref: %s\n", params.Ref.String())
-					//} else {
 					if strings.Contains(params.Description, "RFC") {
 						params.Type = "date"
 					}
 					apiDocPH.parameters = append(apiDocPH.parameters, param{params.Type, params.Description, params.Name, params.In})
-					//printParams(param{params.Type, params.Description, params.Name, params.In})
 				}
 				responseDocPH := responseDoc{}
 				for code, response := range operation.Responses.StatusCodeResponses {
 					responseDocPH.responseCode = code
-					//fmt.Printf("    Response: %d\n", code)
 					responseDocPH.description = response.Description
-					//fmt.Printf("	Description: %s\n", response.Description)
-					//responseDocPH.ref = response.Schema.Ref.String()
-					//fmt.Printf("	Ref: %s\n", response.Schema.Ref.String())
 					apiDocPH.responses = append(apiDocPH.responses, responseDocPH)
 				}
 				apiDocList = append(apiDocList, apiDocPH)
-				//printAPI(apiDocPH)
-				//printResponse(responseDocPH)
 			}
 		}
 	}
@@ -144,9 +124,4 @@ func parseSwag(file string) []apiDoc {
 func replacePlaceholder(urlTemplate, id string) string {
 	re := regexp.MustCompile(`\{.*?\}`)
 	return re.ReplaceAllString(urlTemplate, id)
-}
-
-func refResolver(ref string) string {
-	re := regexp.MustCompile(`\{.*?\}`)
-	return re.FindString(ref) //TODO: ADD FUNCTIONALITY
 }

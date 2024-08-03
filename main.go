@@ -22,22 +22,21 @@ func main() {
 	reader := bufio.NewReader(os.Stdin)
 	content, err := ioutil.ReadFile("panicpanda.txt")
 	if err != nil {
-		fmt.Println("Error reading swagger file:", err)
+		fmt.Println("Error reading swagger file: ", err)
 		return
 	}
 	fmt.Println(string(content))
-	fmt.Println("Welcome to the PanicPanda!")
 	fmt.Println("Input domain and paths (everything before the paths on the swaggerdoc):")
 	controllerAddress, err := reader.ReadString('\n')
 	if err != nil {
-		fmt.Println("Error reading controller address:", err)
+		fmt.Println("Error reading controller address: ", err)
 		return
 	}
 	controllerAddress = strings.TrimSpace(controllerAddress)
 	fmt.Println("Input auth token (if none, leave blank):")
 	token, err := reader.ReadString('\n')
 	if err != nil {
-		fmt.Println("Error reading token:", err)
+		fmt.Println("Error reading token: ", err)
 		return
 	}
 	authflag := true
@@ -49,7 +48,7 @@ func main() {
 	fmt.Println("Input timer:")
 	timea, err := reader.ReadString('\n')
 	if err != nil {
-		fmt.Println("Error reading timer:", err)
+		fmt.Println("Error reading timer: ", err)
 		return
 	}
 	timea = strings.TrimSpace(timea)
@@ -60,12 +59,6 @@ func main() {
 	timer, err := strconv.Atoi(timea)
 	if err != nil {
 		fmt.Println("Error converting timer:", err)
-		return
-	}
-	fmt.Println("Input swagger file path:")
-	swagstr, err := reader.ReadString('\n')
-	if err != nil {
-		fmt.Println("Error reading swagger file:", err)
 		return
 	}
 	var wordlist []string
@@ -102,8 +95,34 @@ func main() {
 
 		defer wordListFile.Close()
 	}
+	fmt.Println("Is your swaggerdoc v2 or v3?")
+	version := ""
+	for {
+		version, err = reader.ReadString('\n')
+		if err != nil {
+			fmt.Println("Error reading version: ", err)
+		}
+		version = strings.TrimSpace(version)
+		if version == "v2" || version == "v3" {
+			break
+		} else {
+			fmt.Println("Please enter either v2 or v3")
+		}
+	}
+	fmt.Println("Input swagger file path:")
+	swagstr, err := reader.ReadString('\n')
+	if err != nil {
+		fmt.Println("Error reading swagger file: ", err)
+		return
+	}
 	swagstr = strings.TrimSpace(swagstr)
-	swag := parseSwag(swagstr)
+	var swag []apiDoc
+	if version == "v2" {
+		swag = swag2(swagstr)
+	} else {
+		swag = swag3(swagstr)
+
+	}
 	if swag == nil {
 		fmt.Println("Error parsing swagger file")
 		return
@@ -122,7 +141,7 @@ func main() {
 	fmt.Println("How many seconds do you want to wait before retrying the fuzzer after continuous failure?")
 	backoffstr, err := reader.ReadString('\n')
 	if err != nil {
-		fmt.Println("Error reading backoff time:", err)
+		fmt.Println("Error reading backoff time: ", err)
 		return
 	}
 	backoffstr = strings.TrimSpace(backoffstr)
@@ -132,7 +151,7 @@ func main() {
 	}
 	backoff, err = strconv.Atoi(backoffstr)
 	if err != nil {
-		fmt.Println("Error converting backoff time:", err)
+		fmt.Println("Error converting backoff time: ", err)
 		return
 	}
 	defang := false

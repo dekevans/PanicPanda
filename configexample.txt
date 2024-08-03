@@ -1,7 +1,8 @@
 <controllerAddress>
 <authentication token>
 <time you want test to take>
-<swaggerdoc configuration filepath>
 <Wordlist filepath (just put a newline here if no wordlist)>
+<version of swagger doc v3 or v2>
+<swaggerdoc configuration filepath>
 <y or Y for header fuzzing, n or N for none at all>
 <seconds you want the program to back off if there are continuous errors>

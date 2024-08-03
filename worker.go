@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -36,23 +37,19 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 	i := 0
 	if len(wordlist) > 0 {
 		for {
-			//fmt.Println("Fuzzing with wordlist")
 			//TIMEOUT HERE
 			select {
 			case <-timeout.Done():
 				fmt.Printf("%d seconds have elapsed. Ending fuzzing process for %s\n", timer, api.path)
-				//printMutex.Unlock()
 				return nil
 			default:
 				//POET w/ WORDLIST STARTS HERE
 				winner := list[i]
 				apiPath := api.path
-				//f.Fuzz(&fstring)
 				var fuzztarget string
-				//printMutex.Lock()
 				f.Fuzz(&fstring)
 				if len(pathlist) != 0 {
-					fstring = url.PathEscape(pathlist[i])
+					fstring = url.PathEscape(pathlist[rand.Intn(len(pathlist))])
 				} else {
 					fstring = url.PathEscape(fstring)
 				}
@@ -60,6 +57,7 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 				requestURL := fmt.Sprintf("%s%s", controllerAddress, apiPath)
 				data := url.Values{}
 				params := url.Values{}
+				headerlist := url.Values{}
 				var tstring string
 				datatype := "none"
 				for _, consume := range api.consumes {
@@ -85,13 +83,15 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 					switch types {
 					case "string":
 						fuzz.NewFromGoFuzz(winner).Fuzz(&fuzztarget)
-						//fmt.Printf("Fuzzing with: %s\n", winner)
 						tstring = replacePlaceholder(string(winner), url.QueryEscape(fuzztarget))
 						if p.in == "body" {
 							data.Set(p.name, tstring)
 						}
 						if p.in == "query" {
 							params.Set(p.name, tstring)
+						}
+						if p.in == "header" {
+							headerlist.Set(p.name, tstring)
 						}
 						listparam[p.name] = tstring
 					case "integer":
@@ -101,6 +101,9 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 						}
 						if p.in == "query" {
 							params.Set(p.name, strconv.Itoa(fint))
+						}
+						if p.in == "header" {
+							headerlist.Set(p.name, tstring)
 						}
 						listparam[p.name] = strconv.Itoa(fint)
 					case "boolean":
@@ -112,6 +115,9 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 						if p.in == "query" {
 							params.Set(p.name, strconv.FormatBool(fbool))
 						}
+						if p.in == "header" {
+							headerlist.Set(p.name, tstring)
+						}
 						listparam[p.name] = strconv.FormatBool(fbool)
 					case "date":
 						fuzz.NewFromGoFuzz(winner).Fuzz(&ftime)
@@ -120,6 +126,9 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 						}
 						if p.in == "query" {
 							params.Set(p.name, ftime.Format(time.RFC1123))
+						}
+						if p.in == "header" {
+							headerlist.Set(p.name, tstring)
 						}
 						listparam[p.name] = ftime.Format(time.RFC1123)
 					}
@@ -134,15 +143,10 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 						}
 					}
 					jsondata, err := json.Marshal(dataMap)
-					//fmt.Println("JSON Data: ", string(jsondata))
-					//fmt.Println(string(jsondata))
 					if err != nil {
 						fmt.Printf("Error marshalling data: %s\n", err)
 						return err
 					}
-
-					//fmt.Println("Request URL: ", reqUrl)
-					//req, err = http.NewRequest(api.call, reqUrl, bytes.NewBuffer(jsondata))
 					if len(jsondata) != 2 {
 						req, err = http.NewRequest(api.call, reqUrl, bytes.NewBuffer(jsondata))
 					} else {
@@ -184,13 +188,10 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 					req.Header.Set("Content-Type", "application/vnd.api+json")
 				} else if datatype == "form" {
 					req, _ = http.NewRequest(api.call, requestURL, strings.NewReader(data.Encode()))
-					/*reqDump, err := httputil.DumpRequestOut(req, true)
-					if err != nil {
-						fmt.Printf("Error dumping request: %s\n", err)
-						return err
-					}
-					fmt.Printf("HTTP Request: %s\n", string(reqDump))*/
 					req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+				}
+				for key, value := range headerlist {
+					req.Header.Add(key, value[0]) //forced header fuzzing
 				}
 				if headers {
 					fuzz.NewFromGoFuzz(winner).Fuzz(&fint)
@@ -205,16 +206,8 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 					fuzz.NewFromGoFuzz(winner).Fuzz(&ftime)
 					req.Header.Add("Last-Modified", ftime.Format(time.RFC1123))
 					listparam["Last-Modified"] = ftime.Format(time.RFC1123)
-					//fuzz.NewFromGoFuzz(winner).Fuzz(&fint)
-					//req.Header.Add("Content-Length", strconv.Itoa(fint))
-					//listparam["Content-Length"] = strconv.Itoa(fint)
 				}
-				/*for _, c := range api.consumes {
-					req.Header.Add("Content-Type", c)
-				}*/
 				if requiresAuth {
-					//fmt.Printf("Token: %s\n", token)
-					//req.Header.Add("Authorization", "Bearer "+token)
 					req.Header.Add("Authorization", "Bearer "+token)
 				} else {
 					f.Fuzz(&fstring)
@@ -225,7 +218,6 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 				//COURIER STARTS HERE
 				client := &http.Client{Timeout: time.Second * 5}
 				startTime := time.Now()
-				//fmt.Print("Sending request using ", client.Timeout, " timeout\n", startTime, avglen)
 				resp, err := client.Do(req)
 				timeElapsed := time.Since(startTime).Milliseconds()
 				if err != nil {
@@ -247,12 +239,9 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 					time.Sleep(time.Duration(backoff) * time.Second)
 					continue
 				}
-				//fmt.Println("Response Status: ", resp.Status)
 				//ORACLE STARTS HERE
-				//time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
 				printMutex.Lock()
 				if avglen == -1 {
-					//fmt.Printf("Initial length of response is: %d\n", int(resp.ContentLength)) //200 responses don't have content length?!?!?!?!?
 					if avglen == -1 {
 						fmt.Println("There is no content length for this response")
 					} else {
@@ -263,10 +252,6 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 				}
 				if resp.ContentLength != int64(avglen) && avglen != -1 && int(resp.ContentLength) != -1 {
 					fmt.Printf("Response length mismatch: Caused by: %s\n", requestURL)
-					/*fmt.Println("\nParameters:")
-					for key, value := range listparam {
-						fmt.Printf("%s -> %s\n", key, value)
-					}*/
 					reqDump, err := httputil.DumpRequestOut(req, true)
 					if err != nil {
 						fmt.Printf("Error dumping request: %s\n", err)
@@ -299,7 +284,6 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 						return err
 					}
 					fmt.Printf("Interesting code %d: Caused by: %s\nReponse Body: %v\n", resp.StatusCode, requestURL, string(bodyBytes))
-					//fmt.Printf("Returned in %s seconds\n", )
 					fmt.Print("\nParameters:\n")
 					for key, value := range listparam {
 						fmt.Printf("%s -> %s\n", key, value)
@@ -326,7 +310,6 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 		}
 	} else {
 		for {
-			//fmt.Println("Fuzzing without wordlist")
 			//TIMEOUT HERE
 			select {
 			case <-timeout.Done():
@@ -336,18 +319,15 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 			default:
 				//POET w/ WORDLIST STARTS HERE
 				apiPath := api.path
-				//f.Fuzz(&fstring)
 				fuzz := fuzz.New()
 				var fuzztarget string
 				fuzz.Fuzz(&fuzztarget)
-				//printMutex.Lock()
-				//fmt.Printf("Fuzzing with: %s and with corpus of %s, %d\n", fuzztarget, winner, i)
-				//printMutex.Unlock()
 				fstring = url.PathEscape(fuzztarget)
 				apiPath = replacePlaceholder(apiPath, fstring)
 				requestURL := fmt.Sprintf("%s%s", controllerAddress, apiPath)
 				data := url.Values{}
 				params := url.Values{}
+				headerlist := url.Values{}
 				var tstring string
 				datatype := "none"
 				for _, consume := range api.consumes {
@@ -373,13 +353,15 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 					switch types {
 					case "string":
 						fuzz.Fuzz(&fuzztarget)
-						//fmt.Printf("Fuzzing with: %s\n", winner)
 						tstring = url.QueryEscape(fuzztarget)
 						if p.in == "body" {
 							data.Set(p.name, tstring)
 						}
 						if p.in == "query" {
 							params.Set(p.name, tstring)
+						}
+						if p.in == "header" {
+							headerlist.Set(p.name, tstring)
 						}
 						listparam[p.name] = tstring
 					case "integer":
@@ -390,15 +372,20 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 						if p.in == "query" {
 							params.Set(p.name, strconv.Itoa(fint))
 						}
+						if p.in == "header" {
+							headerlist.Set(p.name, tstring)
+						}
 						listparam[p.name] = strconv.Itoa(fint)
 					case "boolean":
 						fuzz.Fuzz(&fbool)
-						//list = append(list, []byte(strconv.FormatBool(fbool)))
 						if p.in == "body" {
 							data.Set(p.name, strconv.FormatBool(fbool))
 						}
 						if p.in == "query" {
 							params.Set(p.name, strconv.FormatBool(fbool))
+						}
+						if p.in == "header" {
+							headerlist.Set(p.name, tstring)
 						}
 						listparam[p.name] = strconv.FormatBool(fbool)
 					case "date":
@@ -408,6 +395,9 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 						}
 						if p.in == "query" {
 							params.Set(p.name, ftime.Format(time.RFC1123))
+						}
+						if p.in == "header" {
+							headerlist.Set(p.name, tstring)
 						}
 						listparam[p.name] = ftime.Format(time.RFC1123)
 					}
@@ -422,15 +412,10 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 						}
 					}
 					jsondata, err := json.Marshal(dataMap)
-					//fmt.Println("JSON Data: ", string(jsondata))
-					//fmt.Println(string(jsondata))
 					if err != nil {
 						fmt.Printf("Error marshalling data: %s\n", err)
 						return err
 					}
-
-					//fmt.Println("Request URL: ", reqUrl)
-					//req, err = http.NewRequest(api.call, reqUrl, bytes.NewBuffer(jsondata))
 					if len(jsondata) != 2 {
 						req, err = http.NewRequest(api.call, reqUrl, bytes.NewBuffer(jsondata))
 					} else {
@@ -440,15 +425,6 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 						fmt.Printf("Error creating request: %s\n", err)
 						return err
 					}
-
-					//req, err = http.NewRequest(api.call, requestURL, nil)
-					/*reqDump, err := httputil.DumpRequestOut(req, true)
-					if err != nil {
-						fmt.Printf("Error dumping request: %s\n", err)
-						return err
-					}
-					fmt.Printf("HTTP Request: %s\n", string(reqDump))
-					*/
 					req.Header.Set("Content-Type", "application/json")
 				} else if datatype == "jsonvnd" {
 					dataMap := make(map[string]interface{})
@@ -472,12 +448,6 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 					req.Header.Set("Content-Type", "application/vnd.api+json")
 				} else if datatype == "form" {
 					req, _ = http.NewRequest(api.call, requestURL, strings.NewReader(data.Encode()))
-					/*reqDump, err := httputil.DumpRequestOut(req, true)
-					if err != nil {
-						fmt.Printf("Error dumping request: %s\n", err)
-						return err
-					}
-					fmt.Printf("HTTP Request: %s\n", string(reqDump))*/
 					req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 				}
 				if headers {
@@ -493,16 +463,12 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 					fuzz.Fuzz(&ftime)
 					req.Header.Add("Last-Modified", ftime.Format(time.RFC1123))
 					listparam["Last-Modified"] = ftime.Format(time.RFC1123)
-					//fuzz.Fuzz(&fint)
-					//req.Header.Add("Content-Length", strconv.Itoa(fint))
-					//listparam["Content-Length"] = strconv.Itoa(fint)
 				}
-				/*for _, c := range api.consumes {
-					req.Header.Add("Content-Type", c)
-				}*/
+				for key, value := range headerlist {
+					req.Header.Add(key, value[0]) //forced header fuzzing
+				}
+
 				if requiresAuth {
-					//fmt.Printf("Token: %s\n", token)
-					//req.Header.Add("Authorization", "Bearer "+token)
 					req.Header.Add("Authorization", "Bearer "+token)
 				} else {
 					f.Fuzz(&fstring)
@@ -513,7 +479,6 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 				//COURIER STARTS HERE
 				client := &http.Client{Timeout: time.Second * 5}
 				startTime := time.Now()
-				//fmt.Print("Sending request using ", client.Timeout, " timeout\n", startTime, avglen)
 				resp, err := client.Do(req)
 				timeElapsed := time.Since(startTime).Milliseconds()
 				if err != nil {
@@ -535,12 +500,9 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 					time.Sleep(time.Duration(backoff) * time.Second)
 					continue
 				}
-				//fmt.Println("Response Status: ", resp.Status)
 				//ORACLE STARTS HERE
-				//time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
 				printMutex.Lock()
 				if avglen == -1 {
-					//fmt.Printf("Initial length of response is: %d\n", int(resp.ContentLength)) //200 responses don't have content length?!?!?!?!?
 					if avglen == -1 {
 						fmt.Println("There is no content length for this response")
 					} else {
@@ -551,10 +513,6 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 				}
 				if resp.ContentLength != int64(avglen) && avglen != -1 && int(resp.ContentLength) != -1 {
 					fmt.Printf("Response length mismatch: Caused by: %s\n", requestURL)
-					/*fmt.Println("\nParameters:")
-					for key, value := range listparam {
-						fmt.Printf("%s -> %s\n", key, value)
-					}*/
 					reqDump, err := httputil.DumpRequestOut(req, true)
 					if err != nil {
 						fmt.Printf("Error dumping request: %s\n", err)
@@ -587,13 +545,11 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 						return err
 					}
 					fmt.Printf("Interesting code %d: Caused by: %s\nReponse Body: %v\n", resp.StatusCode, requestURL, string(bodyBytes))
-					//fmt.Printf("Returned in %s seconds\n", )
 					fmt.Print("\nParameters:\n")
 					for key, value := range listparam {
 						fmt.Printf("%s -> %s\n", key, value)
 						list = append(list, []byte(value))
 					}
-					//added failure backoff
 					fmt.Printf("\n")
 					failureCount++
 					if failureCount > 10 {
