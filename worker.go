@@ -156,15 +156,6 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 						fmt.Printf("Error creating request: %s\n", err)
 						return err
 					}
-
-					//req, err = http.NewRequest(api.call, requestURL, nil)
-					/*reqDump, err := httputil.DumpRequestOut(req, true)
-					if err != nil {
-						fmt.Printf("Error dumping request: %s\n", err)
-						return err
-					}
-					fmt.Printf("HTTP Request: %s\n", string(reqDump))
-					*/
 					req.Header.Set("Content-Type", "application/json")
 				} else if datatype == "jsonvnd" {
 					dataMap := make(map[string]interface{})
