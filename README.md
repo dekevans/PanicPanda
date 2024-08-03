@@ -8,9 +8,10 @@ a. Manually, through the cli
 <pre><code>Input domain and paths (everything before the paths on the swaggerdoc):
 Input auth token (if none, leave blank):
 Input timer:
-Input swagger file path:
 Input wordlist file path: (if you want pure random data, leave blank)
-Do you want to fuzz the headers? (Y/N)
+Is your swaggerdoc v2 or v3?
+Input swagger file path:
+Do you want to fuzz the headers? (Y/N)   
 How many seconds do you want to wait before retrying the fuzzer after continuous failure?
 </code></pre>
 b. Piping it through the cli (config.txt in this example contains the information normally entered through the cli in a text file, separated by new lines) 
@@ -35,10 +36,7 @@ b. Piping it through the cli (config.txt in this example contains the informatio
     - Thought: using semphores (7/15/2024)
 - Overall correctness of concept
     - Still needs advice 
-- Oracle needs more work, but I don't know how to better improve it
-    - Full functionality added (7/19/2024)
 
 # TO-DO
 
 - Rate-Limiting system
-- Fix parsing errors for #/ref parameters (v3)
