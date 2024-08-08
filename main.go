@@ -154,14 +154,7 @@ func main() {
 		fmt.Println("Error converting backoff time: ", err)
 		return
 	}
-	defang := false
-	if !defang {
-		threadManager(controllerAddress, swag, token, timer, authflag, headers, wordlist, pathlist, backoff)
-	} else {
-		for _, api := range swag {
-			printAPI(api)
-		}
-	}
+	threadManager(controllerAddress, swag, token, timer, authflag, headers, wordlist, pathlist, backoff)
 }
 func threadManager(controllerAddress string, apiList []apiDoc, args string, timer int, requiresAuth bool, headers bool, wordlist []string, pathlist []string, backoff int) {
 	var wrkgrp sync.WaitGroup
@@ -170,13 +163,18 @@ func threadManager(controllerAddress string, apiList []apiDoc, args string, time
 	fmt.Printf("Starting the fuzzer for %d seconds\n", timer)
 	id := 0
 	var printMutex sync.Mutex
+	defang := true //DEFANG FLAG HERE
 	for _, api := range apiList {
 		wrkgrp.Add(1)
 		go func(id int) {
 			defer wrkgrp.Done()
 			//fmt.Println("Fuzzing API:", api.path)
 			//if api.path == "/applications" {
-			fullfunc(controllerAddress, api, args, timer, requiresAuth, headers, id, timeout, &printMutex, wordlist, pathlist, backoff)
+			if !defang {
+				fullfunc(controllerAddress, api, args, timer, requiresAuth, headers, id, timeout, &printMutex, wordlist, pathlist, backoff)
+			} else {
+				demo(controllerAddress, api, args, timer, requiresAuth, headers, id, timeout, &printMutex, wordlist, pathlist, backoff)
+			}
 			//return
 			//}
 		}(id)

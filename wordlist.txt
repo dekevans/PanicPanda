@@ -1,4 +1,4 @@
-alert({})
+<script>alert({})</script>
 SELECT {} FROM {}
 DELETE {} FROM {}
 PATHLIST 

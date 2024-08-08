@@ -1,0 +1,8 @@
+https://test.com/test/test/public-api/v1
+EXAMPLETOKEN100
+50
+wordlist.txt
+v3
+test1.yaml
+n
+2
