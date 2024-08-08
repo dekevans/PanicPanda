@@ -455,10 +455,6 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 					req.Header.Add("Last-Modified", ftime.Format(time.RFC1123))
 					listparam["Last-Modified"] = ftime.Format(time.RFC1123)
 				}
-				for key, value := range headerlist {
-					req.Header.Add(key, value[0]) //forced header fuzzing
-				}
-
 				if requiresAuth {
 					req.Header.Add("Authorization", "Bearer "+token)
 				} else {
