@@ -41,4 +41,4 @@ b. Piping it through the cli (config.txt in this example contains the informatio
 
 - Rate-Limiting system
 
-# CREATED BY: RITE (Bryant H)
+# CREATED BY: RITE (Bryant H) Summer 2024
