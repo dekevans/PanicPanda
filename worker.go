@@ -50,7 +50,7 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 				//POET w/ WORDLIST STARTS HERE
 				winner := list[i]
 				i++
-				if i >= len(list) {
+				if i == len(list) {
 					i = 0
 				}
 				evoflag = false
@@ -68,6 +68,10 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 					fstring = url.PathEscape(pathlist[j])
 				} else {
 					fstring = url.PathEscape(fstring)
+				}
+				j++
+				if j == len(pathlist) {
+					j = 0
 				}
 				apiPath = replacePlaceholder(apiPath, fstring)
 				requestURL := fmt.Sprintf("%s%s", controllerAddress, apiPath)
@@ -111,7 +115,7 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 						if p.in == "header" {
 							headerlist.Set(p.name, tstring)
 						}
-						listparam[p.name] = tstring
+						listparam[p.name] = url.QueryEscape(tstring)
 					case "integer":
 						if evoflag {
 							fint, _ = strconv.Atoi(string(mutate(evotarget)))
@@ -127,7 +131,23 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 						if p.in == "header" {
 							headerlist.Set(p.name, strconv.Itoa(fint))
 						}
-						listparam[p.name] = strconv.Itoa(fint)
+						listparam[p.name] = url.QueryEscape(strconv.Itoa(fint))
+					case "int64":
+						if evoflag {
+							fint, _ = strconv.Atoi(string(mutate(evotarget)))
+						} else {
+							fuzz.NewFromGoFuzz(winner).Fuzz(&fint)
+						}
+						if p.in == "body" {
+							data.Set(p.name, strconv.Itoa(fint))
+						}
+						if p.in == "query" {
+							params.Set(p.name, strconv.Itoa(fint))
+						}
+						if p.in == "header" {
+							headerlist.Set(p.name, strconv.Itoa(fint))
+						}
+						listparam[p.name] = url.QueryEscape(strconv.Itoa(fint))
 					case "boolean":
 						fbool = mrand.Intn(2) == 1
 						//list = append(list, []byte(strconv.FormatBool(fbool)))
@@ -140,7 +160,7 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 						if p.in == "header" {
 							headerlist.Set(p.name, strconv.FormatBool(fbool))
 						}
-						listparam[p.name] = strconv.FormatBool(fbool)
+						listparam[p.name] = url.QueryEscape(strconv.FormatBool(fbool))
 					case "date":
 						if evoflag {
 							ftime, _ = time.Parse(time.RFC1123, string(mutate(evotarget)))
@@ -156,7 +176,7 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 						if p.in == "header" {
 							headerlist.Set(p.name, tstring)
 						}
-						listparam[p.name] = ftime.Format(time.RFC1123)
+						listparam[p.name] = url.QueryEscape(ftime.Format(time.RFC1123))
 					}
 				}
 				req := &http.Request{}
@@ -239,10 +259,20 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 				client := &http.Client{Timeout: time.Second * 5}
 				startTime := time.Now()
 				resp, err := client.Do(req)
+				if err != nil {
+					fmt.Println("Error sending request: ", err)
+				}
 				timeElapsed := time.Since(startTime).Milliseconds()
 				if err != nil {
 					if err, ok := err.(net.Error); ok && err.Timeout() {
 						fmt.Printf("Timeout: Caused by: %s\n", req.URL)
+						//Print entire request
+						reqDump, err := httputil.DumpRequestOut(req, true)
+						if err != nil {
+							fmt.Printf("Error dumping request: %s\n", err)
+							return nil
+						}
+						fmt.Printf("HTTP Request: %s\n", string(reqDump))
 						failureCount++
 						if failureCount > 10 {
 							fmt.Printf("Too many failures. Waiting %d seconds before continuing\n", backoff)
@@ -254,6 +284,7 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 					return err
 				}
 				defer resp.Body.Close()
+				//print response
 				if resp.StatusCode == 429 {
 					fmt.Printf("Rate limited: Backing off for %d seconds\n", backoff)
 					time.Sleep(time.Duration(backoff) * time.Second)
@@ -285,23 +316,14 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 						break
 					}
 				}
-				fmt.Println("Response Status: ", resp.StatusCode)
-				if dbg {
-					bodyBytes, err := ioutil.ReadAll(resp.Body)
-					if err != nil {
-						fmt.Printf("Error reading response body: %s\n", err)
-						return err
-					}
-					fmt.Printf("Response Status: %s %s\n Responded in: %d milliseconds\n", requestURL, resp.Status, timeElapsed)
-					fmt.Printf("Response Body: %s\n", string(bodyBytes))
-				}
+				//fmt.Println("Response Status: ", resp.StatusCode)
 				if resp.StatusCode == 500 || flag {
 					bodyBytes, err := ioutil.ReadAll(resp.Body)
 					if err != nil {
 						fmt.Printf("Error reading response body: %s\n", err)
 						return err
 					}
-					fmt.Printf("Interesting code %d: Caused by: %s\nReponse Body: %v\n", resp.StatusCode, requestURL, string(bodyBytes))
+					fmt.Printf("Interesting code %d: Caused by: %s %s\nReponse Body: %v\n", resp.StatusCode, req.Method, requestURL, string(bodyBytes))
 					fmt.Print("\nParameters:\n")
 					for key, value := range listparam {
 						fmt.Printf("%s -> %s\n", key, value)
@@ -561,7 +583,6 @@ func fullfunc(controllerAddress string, api apiDoc, token string, timer int, req
 						break
 					}
 				}
-				fmt.Println("Response Status: ", resp.StatusCode)
 				if dbg {
 					bodyBytes, err := ioutil.ReadAll(resp.Body)
 					if err != nil {

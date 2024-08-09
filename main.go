@@ -156,6 +156,7 @@ func main() {
 	}
 	threadManager(controllerAddress, swag, token, timer, authflag, headers, wordlist, pathlist, backoff)
 }
+
 func threadManager(controllerAddress string, apiList []apiDoc, args string, timer int, requiresAuth bool, headers bool, wordlist []string, pathlist []string, backoff int) {
 	var wrkgrp sync.WaitGroup
 	timeout, cancel := context.WithTimeout(context.Background(), time.Duration(timer)*time.Second)
@@ -168,15 +169,11 @@ func threadManager(controllerAddress string, apiList []apiDoc, args string, time
 		wrkgrp.Add(1)
 		go func(id int) {
 			defer wrkgrp.Done()
-			//fmt.Println("Fuzzing API:", api.path)
-			//if api.path == "/applications" {
 			if !defang {
 				fullfunc(controllerAddress, api, args, timer, requiresAuth, headers, id, timeout, &printMutex, wordlist, pathlist, backoff)
 			} else {
 				demo(controllerAddress, api, args, timer, requiresAuth, headers, id, timeout, &printMutex, wordlist, pathlist, backoff)
 			}
-			//return
-			//}
 		}(id)
 		id++
 	}

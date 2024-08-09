@@ -171,6 +171,9 @@ func demo(controllerAddress string, api apiDoc, token string, timer int, require
 				}
 			}
 			apiPath := api.path
+			printMutex.Lock()
+			fmt.Println("Method: ", api.call)
+			printMutex.Unlock()
 			var fuzztarget string
 			f.Fuzz(&fstring)
 			if len(pathlist) != 0 {

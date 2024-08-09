@@ -30,12 +30,18 @@ func swag3(file string) []apiDoc {
 			switch method {
 			case "GET":
 				if pathit.Get != nil {
+					fmt.Println("1")
 					operation := pathit.Get
 					apiDocph.call = method
 					for _, params := range operation.Parameters {
-						params := doc.Components.Parameters[strings.Split(params.Ref, "/")[3]]
-						param := param{(*params.Value.Schema.Value.Type)[0], params.Value.Description, params.Value.Name, params.Value.In}
-						apiDocph.parameters = append(apiDocph.parameters, param)
+						parama := doc.Components.Parameters[strings.Split(params.Ref, "/")[len(strings.Split(params.Ref, "/"))-1]]
+						if parama == nil {
+							param := param{(*params.Value.Schema.Value.Type)[0], params.Value.Description, params.Value.Name, params.Value.In}
+							apiDocph.parameters = append(apiDocph.parameters, param)
+						} else {
+							param := param{(*parama.Value.Schema.Value.Type)[0], params.Value.Description, params.Value.Name, params.Value.In}
+							apiDocph.parameters = append(apiDocph.parameters, param)
+						}
 					}
 					if operation.RequestBody != nil {
 						for mediastr, media := range operation.RequestBody.Value.Content {
@@ -83,9 +89,14 @@ func swag3(file string) []apiDoc {
 					operation := pathit.Post
 					apiDocph.call = method
 					for _, params := range operation.Parameters {
-						params := doc.Components.Parameters[strings.Split(params.Ref, "/")[3]]
-						param := param{(*params.Value.Schema.Value.Type)[0], params.Value.Description, params.Value.Name, params.Value.In}
-						apiDocph.parameters = append(apiDocph.parameters, param)
+						parama := doc.Components.Parameters[strings.Split(params.Ref, "/")[len(strings.Split(params.Ref, "/"))-1]]
+						if parama == nil {
+							param := param{(*params.Value.Schema.Value.Type)[0], params.Value.Description, params.Value.Name, params.Value.In}
+							apiDocph.parameters = append(apiDocph.parameters, param)
+						} else {
+							param := param{(*parama.Value.Schema.Value.Type)[0], params.Value.Description, params.Value.Name, params.Value.In}
+							apiDocph.parameters = append(apiDocph.parameters, param)
+						}
 					}
 					if operation.RequestBody != nil {
 						for mediastr, media := range operation.RequestBody.Value.Content {
@@ -133,14 +144,15 @@ func swag3(file string) []apiDoc {
 					operation := pathit.Put
 					apiDocph.call = method
 					for _, params := range operation.Parameters {
-						if params.Ref != "" {
-							params := doc.Components.Parameters[strings.Split(params.Ref, "/")[3]]
+						parama := doc.Components.Parameters[strings.Split(params.Ref, "/")[len(strings.Split(params.Ref, "/"))-1]]
+						if parama == nil {
 							param := param{(*params.Value.Schema.Value.Type)[0], params.Value.Description, params.Value.Name, params.Value.In}
 							apiDocph.parameters = append(apiDocph.parameters, param)
 						} else {
-							param := param{(*params.Value.Schema.Value.Type)[0], params.Value.Description, params.Value.Name, params.Value.In}
+							param := param{(*parama.Value.Schema.Value.Type)[0], params.Value.Description, params.Value.Name, params.Value.In}
 							apiDocph.parameters = append(apiDocph.parameters, param)
 						}
+
 					}
 					if operation.RequestBody != nil {
 						for mediastr, media := range operation.RequestBody.Value.Content {
@@ -188,9 +200,14 @@ func swag3(file string) []apiDoc {
 					operation := pathit.Delete
 					apiDocph.call = method
 					for _, params := range operation.Parameters {
-						params := doc.Components.Parameters[strings.Split(params.Ref, "/")[3]]
-						param := param{(*params.Value.Schema.Value.Type)[0], params.Value.Description, params.Value.Name, params.Value.In}
-						apiDocph.parameters = append(apiDocph.parameters, param)
+						parama := doc.Components.Parameters[strings.Split(params.Ref, "/")[len(strings.Split(params.Ref, "/"))-1]]
+						if parama == nil {
+							param := param{(*params.Value.Schema.Value.Type)[0], params.Value.Description, params.Value.Name, params.Value.In}
+							apiDocph.parameters = append(apiDocph.parameters, param)
+						} else {
+							param := param{(*parama.Value.Schema.Value.Type)[0], params.Value.Description, params.Value.Name, params.Value.In}
+							apiDocph.parameters = append(apiDocph.parameters, param)
+						}
 					}
 					if operation.RequestBody != nil {
 						for mediastr, media := range operation.RequestBody.Value.Content {
@@ -238,9 +255,14 @@ func swag3(file string) []apiDoc {
 					operation := pathit.Options
 					apiDocph.call = method
 					for _, params := range operation.Parameters {
-						params := doc.Components.Parameters[strings.Split(params.Ref, "/")[3]]
-						param := param{(*params.Value.Schema.Value.Type)[0], params.Value.Description, params.Value.Name, params.Value.In}
-						apiDocph.parameters = append(apiDocph.parameters, param)
+						parama := doc.Components.Parameters[strings.Split(params.Ref, "/")[len(strings.Split(params.Ref, "/"))-1]]
+						if parama == nil {
+							param := param{(*params.Value.Schema.Value.Type)[0], params.Value.Description, params.Value.Name, params.Value.In}
+							apiDocph.parameters = append(apiDocph.parameters, param)
+						} else {
+							param := param{(*parama.Value.Schema.Value.Type)[0], params.Value.Description, params.Value.Name, params.Value.In}
+							apiDocph.parameters = append(apiDocph.parameters, param)
+						}
 					}
 					if operation.RequestBody != nil {
 						for mediastr, media := range operation.RequestBody.Value.Content {
@@ -286,9 +308,14 @@ func swag3(file string) []apiDoc {
 					operation := pathit.Patch
 					apiDocph.call = method
 					for _, params := range operation.Parameters {
-						params := doc.Components.Parameters[strings.Split(params.Ref, "/")[3]]
-						param := param{(*params.Value.Schema.Value.Type)[0], params.Value.Description, params.Value.Name, params.Value.In}
-						apiDocph.parameters = append(apiDocph.parameters, param)
+						parama := doc.Components.Parameters[strings.Split(params.Ref, "/")[len(strings.Split(params.Ref, "/"))-1]]
+						if parama == nil {
+							param := param{(*params.Value.Schema.Value.Type)[0], params.Value.Description, params.Value.Name, params.Value.In}
+							apiDocph.parameters = append(apiDocph.parameters, param)
+						} else {
+							param := param{(*parama.Value.Schema.Value.Type)[0], params.Value.Description, params.Value.Name, params.Value.In}
+							apiDocph.parameters = append(apiDocph.parameters, param)
+						}
 					}
 					if operation.RequestBody != nil {
 						for mediastr, media := range operation.RequestBody.Value.Content {
